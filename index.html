@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>預約賞車與試乘</title>
+    <style>
+        :root {
+            --primary-color: #111111;
+            --accent-color: #e50914; /* 帥氣的跑車紅 */
+            --bg-color: #f8f9fa;
+        }
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        body {
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            display: block;
+        }
+        /* 外層容器，模擬手機 App 介面 */
+        .app-wrapper {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: #ffffff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+            display: block;
+            padding: 24px;
+        }
+        /* 頂部橫幅 */
+        .app-header {
+            text-align: center;
+            padding: 20px 0 10px 0;
+        }
+        .app-header h1 {
+            font-size: 22pt;
+            font-weight: 800;
+            margin: 0;
+            color: var(--primary-color);
+            letter-spacing: 1px;
+        }
+        .app-header p {
+            font-size: 10pt;
+            color: #666;
+            margin: 8px 0 0 0;
+        }
+        /* 表單樣式 */
+        .form-container {
+            margin-top: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 10.5pt;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 11pt;
+            background-color: #f8fafc;
+            transition: all 0.2s ease-in-out;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            background-color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.1);
+        }
+        /* 提交按鈕 */
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background-color: var(--primary-color);
+            color: #ffffff;
+            border: none;
+            border-radius: 14px;
+            font-size: 12pt;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .submit-btn:hover {
+            background-color: var(--accent-color);
+        }
+        .submit-btn:disabled {
+            background-color: #cbd5e1;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+    <div class="app-header">
+        <h1>預約賞車與試乘</h1>
+        <p>請填寫以下資訊，我們將有專員為您安排專屬行程</p>
+    </div>
+
+    <div class="form-container">
+        <form id="bookingForm">
+            <div class="form-group">
+                <label for="name">您的姓名</label>
+                <input type="text" id="name" required placeholder="請輸入姓名">
+            </div>
+
+            <div class="form-group">
+                <label for="phone">聯絡電話</label>
+                <input type="tel" id="phone" required placeholder="請輸入手機號碼">
+            </div>
+
+            <div class="form-group">
+                <label for="car">欲預約車款</label>
+                <select id="car" required>
+                    <option value="" disabled selected>請選擇車款</option>
+                    <option value="Model Y">Tesla Model Y</option>
+                    <option value="Model 3">Tesla Model 3</option>
+                    <option value="Jimny">Suzuki Jimny</option>
+                    <option value="Swift">Suzuki Swift</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="date">預約日期</label>
+                <input type="date" id="date" required>
+            </div>
+
+            <div class="form-group">
+                <label for="time">理想時段</label>
+                <select id="time" required>
+                    <option value="" disabled selected>請選擇時段</option>
+                    <option value="上午 (10:00 - 12:00)">上午 (10:00 - 12:00)</option>
+                    <option value="下午 (13:00 - 17:00)">下午 (13:00 - 17:00)</option>
+                    <option value="晚上 (18:00 - 20:00)">晚上 (18:00 - 20:00)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">立即送出預約</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // ⚠️ 請在下方雙引號內，替換為您在「步驟二」最後取得的 Google Apps Script 網頁應用程式 URL 網址
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzcEgh_xGjCLkViepvYvfDnzqA5QxQwpnAOavWcmjSJzanLgufpCh43nYnMNNqXJPEH/exec
+";
+
+    document.getElementById('bookingForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = "正在送出預約...";
+
+        // 整理準備發送的資料
+        const payload = {
+            name: document.getElementById('name').value,
+            phone: document.getElementById('phone').value,
+            car: document.getElementById('car').value,
+            date: document.getElementById('date').value,
+            time: document.getElementById('time').value
+        };
+
+        // 發送 POST 請求寫入 Google 試算表
+        fetch(GAS_WEB_APP_URL, {
+            method: 'POST',
+            mode: 'no-cors', // 使用 no-cors 模式避免跨網域阻擋
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(() => {
+            alert('🎉 預約送出成功！專員將於 24 小時內與您聯絡。');
+            document.getElementById('bookingForm').reset();
+            submitBtn.disabled = false;
+            submitBtn.textContent = "立即送出預約";
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('系統發生錯誤，請稍後再試！');
+            submitBtn.disabled = false;
+            submitBtn.textContent = "立即送出預約";
+        });
+    });
+</script>
+
+</body>
+</html>
