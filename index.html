@@ -20,7 +20,6 @@
             padding: 0;
             display: block;
         }
-        /* 外層容器，模擬手機 App 介面 */
         .app-wrapper {
             max-width: 480px;
             margin: 0 auto;
@@ -30,7 +29,6 @@
             display: block;
             padding: 24px;
         }
-        /* 頂部橫幅 */
         .app-header {
             text-align: center;
             padding: 20px 0 10px 0;
@@ -47,7 +45,6 @@
             color: #666;
             margin: 8px 0 0 0;
         }
-        /* 表單樣式 */
         .form-container {
             margin-top: 30px;
         }
@@ -76,7 +73,6 @@
             background-color: #ffffff;
             box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.1);
         }
-        /* 提交按鈕 */
         .submit-btn {
             width: 100%;
             padding: 16px;
@@ -124,11 +120,7 @@
             <div class="form-group">
                 <label for="car">欲預約車款</label>
                 <select id="car" required>
-                    <option value="" disabled selected>請選擇車款</option>
-                    <option value="Model Y">Tesla Model Y</option>
-                    <option value="Model 3">Tesla Model 3</option>
-                    <option value="Jimny">Suzuki Jimny</option>
-                    <option value="Swift">Suzuki Swift</option>
+                    <option value="" disabled selected>正在載入最新車款...</option>
                 </select>
             </div>
 
@@ -140,23 +132,60 @@
             <div class="form-group">
                 <label for="time">理想時段</label>
                 <select id="time" required>
-                    <option value="" disabled selected>請選擇時段</option>
-                    <option value="上午 (10:00 - 12:00)">上午 (10:00 - 12:00)</option>
-                    <option value="下午 (13:00 - 17:00)">下午 (13:00 - 17:00)</option>
-                    <option value="晚上 (18:00 - 20:00)">晚上 (18:00 - 20:00)</option>
+                    <option value="" disabled selected>正在載入最新時段...</option>
                 </select>
             </div>
 
-            <button type="submit" class="submit-btn" id="submitBtn">立即送出預約</button>
+            <button type="submit" class="submit-btn" id="submitBtn" disabled>正在初始化系統...</button>
         </form>
     </div>
 </div>
 
 <script>
-    // ⚠️ 請在下方雙引號內，替換為您在「步驟二」最後取得的 Google Apps Script 網頁應用程式 URL 網址
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzcEgh_xGjCLkViepvYvfDnzqA5QxQwpnAOavWcmjSJzanLgufpCh43nYnMNNqXJPEH/exec
-";
+    // ⚠️ 請在下方貼上你在「步驟二」最後取得的 Google Apps Script 網頁應用程式 URL 網址
+    const GAS_WEB_APP_URL = "在此貼上你的_GAS_URL";
 
+    // 頁面載入時，自動從 Google 後台讀取「車款」與「時間」選單
+    window.addEventListener('DOMContentLoaded', () => {
+        fetch(GAS_WEB_APP_URL)
+            .then(response => response.json())
+            .then(data => {
+                if(data.result === 'success') {
+                    // 1. 填入車款下拉選單
+                    const carSelect = document.getElementById('car');
+                    carSelect.innerHTML = '<option value="" disabled selected>請選擇車款</option>';
+                    data.cars.forEach(car => {
+                        const option = document.createElement('option');
+                        option.value = car;
+                        option.textContent = car;
+                        carSelect.appendChild(option);
+                    });
+
+                    // 2. 填入時段下拉選單
+                    const timeSelect = document.getElementById('time');
+                    timeSelect.innerHTML = '<option value="" disabled selected>請選擇時段</option>';
+                    data.times.forEach(time => {
+                        const option = document.createElement('option');
+                        option.value = time;
+                        option.textContent = time;
+                        timeSelect.appendChild(option);
+                    });
+
+                    // 3. 啟用送出按鈕
+                    const submitBtn = document.getElementById('submitBtn');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "立即送出預約";
+                } else {
+                    alert('後台選單載入失敗：' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('載入後台失敗:', error);
+                alert('無法與後台連線，請檢查網路！');
+            });
+    });
+
+    // 提交預約表單
     document.getElementById('bookingForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -164,7 +193,6 @@
         submitBtn.disabled = true;
         submitBtn.textContent = "正在送出預約...";
 
-        // 整理準備發送的資料
         const payload = {
             name: document.getElementById('name').value,
             phone: document.getElementById('phone').value,
@@ -173,10 +201,9 @@
             time: document.getElementById('time').value
         };
 
-        // 發送 POST 請求寫入 Google 試算表
         fetch(GAS_WEB_APP_URL, {
             method: 'POST',
-            mode: 'no-cors', // 使用 no-cors 模式避免跨網域阻擋
+            mode: 'no-cors',
             headers: {
                 'Content-Type': 'application/json'
             },
