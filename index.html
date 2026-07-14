@@ -73,6 +73,39 @@
             background-color: #ffffff;
             box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.1);
         }
+        /* 試乘按鈕群組 */
+        .radio-group {
+            display: table;
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 10px 0;
+            margin-left: -10px;
+        }
+        .radio-option {
+            display: table-cell;
+            width: 50%;
+            text-align: center;
+        }
+        .radio-option input[type="radio"] {
+            display: none;
+        }
+        .radio-option label {
+            display: block;
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            padding: 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 11pt;
+            font-weight: bold;
+            color: #4a5568;
+            transition: all 0.2s;
+        }
+        .radio-option input[type="radio"]:checked + label {
+            background-color: #fff5f5;
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
         .submit-btn {
             width: 100%;
             padding: 16px;
@@ -84,7 +117,7 @@
             font-weight: 700;
             cursor: pointer;
             transition: background 0.2s;
-            margin-top: 20px;
+            margin-top: 25px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         .submit-btn:hover {
@@ -125,6 +158,13 @@
             </div>
 
             <div class="form-group">
+                <label for="location">理想賞車地點</label>
+                <select id="location" required>
+                    <option value="" disabled selected>正在載入最新據點...</option>
+                </select>
+            </div>
+
+            <div class="form-group">
                 <label for="date">預約日期</label>
                 <input type="date" id="date" required>
             </div>
@@ -136,16 +176,30 @@
                 </select>
             </div>
 
+            <div class="form-group">
+                <label>是否需要安排試乘？</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="drive_yes" name="drive" value="需要試乘" checked>
+                        <label for="drive_yes">🚗 需要試乘</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="drive_no" name="drive" value="僅賞車(不試乘)">
+                        <label for="drive_no">👀 僅現場賞車</label>
+                    </div>
+                </div>
+            </div>
+
             <button type="submit" class="submit-btn" id="submitBtn" disabled>正在初始化系統...</button>
         </form>
     </div>
 </div>
 
 <script>
-    // ⚠️ 請在下方貼上你在「步驟二」最後取得的 Google Apps Script 網頁應用程式 URL 網址
+    // ⚠️ 請在下方貼上你在 Google Apps Script 管理部署中取得的網頁應用程式 URL
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzcEgh_xGjCLkViepvYvfDnzqA5QxQwpnAOavWcmjSJzanLgufpCh43nYnMNNqXJPEH/exec";
 
-    // 頁面載入時，自動從 Google 後台讀取「車款」與「時間」選單
+    // 頁面載入時，自動從 Google 後台讀取「車款」、「時間」、「地點」選單
     window.addEventListener('DOMContentLoaded', () => {
         fetch(GAS_WEB_APP_URL)
             .then(response => response.json())
@@ -161,7 +215,17 @@
                         carSelect.appendChild(option);
                     });
 
-                    // 2. 填入時段下拉選單
+                    // 2. 填入地點下拉選單
+                    const locSelect = document.getElementById('location');
+                    locSelect.innerHTML = '<option value="" disabled selected>請選擇賞車地點</option>';
+                    data.locations.forEach(loc => {
+                        const option = document.createElement('option');
+                        option.value = loc;
+                        option.textContent = loc;
+                        locSelect.appendChild(option);
+                    });
+
+                    // 3. 填入時段下拉選單
                     const timeSelect = document.getElementById('time');
                     timeSelect.innerHTML = '<option value="" disabled selected>請選擇時段</option>';
                     data.times.forEach(time => {
@@ -171,7 +235,7 @@
                         timeSelect.appendChild(option);
                     });
 
-                    // 3. 啟用送出按鈕
+                    // 4. 啟用送出按鈕
                     const submitBtn = document.getElementById('submitBtn');
                     submitBtn.disabled = false;
                     submitBtn.textContent = "立即送出預約";
@@ -193,12 +257,17 @@
         submitBtn.disabled = true;
         submitBtn.textContent = "正在送出預約...";
 
+        // 取得被選取的「是否試乘」選項
+        const driveVal = document.querySelector('input[name="drive"]:checked').value;
+
         const payload = {
             name: document.getElementById('name').value,
             phone: document.getElementById('phone').value,
             car: document.getElementById('car').value,
+            location: document.getElementById('location').value,
             date: document.getElementById('date').value,
-            time: document.getElementById('time').value
+            time: document.getElementById('time').value,
+            drive: driveVal
         };
 
         fetch(GAS_WEB_APP_URL, {
@@ -212,6 +281,8 @@
         .then(() => {
             alert('🎉 預約送出成功！專員將於 24 小時內與您聯絡。');
             document.getElementById('bookingForm').reset();
+            // 重設 radio 預設值為「需要試乘」
+            document.getElementById('drive_yes').checked = true;
             submitBtn.disabled = false;
             submitBtn.textContent = "立即送出預約";
         })
